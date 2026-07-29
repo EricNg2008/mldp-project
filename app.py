@@ -55,8 +55,15 @@ with col1:
     flat_model = st.selectbox("Flat model", FLAT_MODELS, index=FLAT_MODELS.index("Model A"))
 with col2:
     storey_range = st.selectbox("Storey (which floors)", STOREY_RANGES, index=3)
-    # floor area defaults to the typical size for the chosen flat type
-    floor_area = st.slider("Floor area (sqm)", 30, 200, TYPICAL_SQM[flat_type])
+    # The floor area slider starts at the average size for the chosen flat type
+    # (from the TYPICAL_SQM table above). So when the user picks a different flat
+    # type, the sqm automatically jumps to that type's average, so the two inputs
+    # always make sense together (a 3 ROOM flat is not left sitting at 146 sqm).
+    # The user can still drag the slider to their flat's exact size if they know it.
+    floor_area = st.slider(
+        "Floor area (sqm)", 30, 200, TYPICAL_SQM[flat_type],
+        help="Starts at the average floor area for the flat type you picked. "
+             "Drag it if your flat is bigger or smaller.")
     remaining_lease = st.slider("Remaining lease (years)", 40, 99, 90)
 
 year = st.slider("Year of sale", 2017, 2026, 2026)
