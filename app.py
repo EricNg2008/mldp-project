@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-st.set_page_config(page_title="HDB Resale Price Estimator", page_icon="🏠", layout="centered")
+st.set_page_config(page_title="HDB Resale Price Estimator", layout="centered")
 
 # Load the trained model and the feature columns it expects (cached so it loads once)
 @st.cache_resource
@@ -34,7 +34,7 @@ STOREY_RANGES = ['01 TO 03', '04 TO 06', '07 TO 09', '10 TO 12', '13 TO 15', '16
 TYPICAL_SQM = {'2 ROOM': 47, '3 ROOM': 67, '4 ROOM': 93,
                '5 ROOM': 117, 'EXECUTIVE': 146, 'MULTI-GENERATION': 164}
 
-st.title("🏠 HDB Resale Price Estimator")
+st.title("HDB Resale Price Estimator")
 st.write("Enter a flat's details to get an estimated fair resale price. "
          "Use it as a benchmark to check whether a seller's asking price looks reasonable.")
 
