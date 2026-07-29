@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="HDB Resale Price Estimator", layout="centered")
 
@@ -10,6 +11,13 @@ def load_model():
     return joblib.load("hdb_price_model.pkl"), joblib.load("model_columns.pkl")
 
 model, model_columns = load_model()
+
+# Load the dataset (cached) so I can show graphs that compare the estimate to real sales
+@st.cache_data
+def load_data():
+    return pd.read_csv("ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv")
+
+data = load_data()
 
 # Dropdown options (the exact values the model was trained on)
 TOWNS = ['ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH', 'BUKIT PANJANG',
@@ -79,5 +87,29 @@ if st.button("Estimate price"):
         st.success(f"Estimated fair resale price: ${price:,.0f}")
         st.caption("This is an estimate. On unseen test data the model is off by about "
                    "$29,000 on average, so treat it as a ballpark rather than an exact valuation.")
+
+        # ---------- Context graphs ----------
+        st.subheader("How this estimate compares")
+
+        # Graph 1: the estimate against actual past sales of the same flat type in the same town
+        similar = data[(data['town'] == town) & (data['flat_type'] == flat_type)]
+        if len(similar) >= 10:
+            fig, ax = plt.subplots(figsize=(8, 4))
+            ax.hist(similar['resale_price'], bins=30, color='#7fb3d5')
+            ax.axvline(price, color='red', linestyle='--', linewidth=2, label='Your estimate')
+            ax.set_xlabel('Resale Price (SGD)')
+            ax.set_ylabel('Number of past sales')
+            ax.set_title(f'Your estimate vs past {flat_type} sales in {town}')
+            ax.legend()
+            st.pyplot(fig)
+        else:
+            st.write("Not enough past sales of this exact flat type in this town to plot.")
+
+        # Graph 2: how prices in this town have moved over the years
+        town_data = data[data['town'] == town].copy()
+        town_data['year'] = town_data['month'].str[:4]
+        st.write(f"Median resale price by year in {town}:")
+        st.line_chart(town_data.groupby('year')['resale_price'].median())
+
     except Exception as error:
         st.error(f"Sorry, something went wrong while estimating the price: {error}")
