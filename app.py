@@ -5,41 +5,29 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="HDB Resale Price Estimator", page_icon="🏙️", layout="wide")
 
-# ---------- Styling: make it look like a real property website ----------
+# ---------- Styling: keep Streamlit's default background, just add a single accent colour ----------
+ACCENT = "#0e6ba8"
 st.markdown(
-    """
+    f"""
     <style>
     /* hide default streamlit chrome for a cleaner site look */
-    #MainMenu, footer, header {visibility: hidden;}
-    .block-container {padding-top: 1.4rem; padding-bottom: 2rem; max-width: 1150px;}
+    #MainMenu, footer, header {{visibility: hidden;}}
+    .block-container {{padding-top: 1.4rem; padding-bottom: 2rem; max-width: 1150px;}}
 
-    /* hero header */
-    .hero {
-        background: linear-gradient(135deg, #0e6ba8 0%, #13a89e 100%);
-        padding: 1.5rem 2rem; border-radius: 16px; margin-bottom: 1.3rem;
-        box-shadow: 0 6px 18px rgba(14, 107, 168, 0.25);
-    }
-    .hero h1 {color: #ffffff; margin: 0; font-size: 1.9rem; font-weight: 700;}
-    .hero p {color: #dceefb; margin: 0.35rem 0 0; font-size: 1.02rem;}
+    /* hero header (single accent colour) */
+    .hero {{background: {ACCENT}; padding: 1.5rem 2rem; border-radius: 16px; margin-bottom: 1.3rem;}}
+    .hero h1 {{color: #ffffff; margin: 0; font-size: 1.9rem; font-weight: 700;}}
+    .hero p {{color: #dceefb; margin: 0.35rem 0 0; font-size: 1.02rem;}}
 
-    /* estimated price card */
-    .price-card {
-        background: linear-gradient(135deg, #0e6ba8 0%, #13a89e 100%);
-        border-radius: 16px; padding: 1.4rem; text-align: center; color: #ffffff;
-        box-shadow: 0 6px 18px rgba(14, 107, 168, 0.25);
-    }
-    .price-card .label {font-size: 0.9rem; letter-spacing: 0.6px; opacity: 0.92; text-transform: uppercase;}
-    .price-card .value {font-size: 2.6rem; font-weight: 800; margin-top: 0.25rem; line-height: 1;}
-    .price-card .sub {font-size: 0.82rem; opacity: 0.9; margin-top: 0.5rem;}
+    /* estimated price card (same single accent colour) */
+    .price-card {{background: {ACCENT}; border-radius: 16px; padding: 1.4rem; text-align: center; color: #ffffff;}}
+    .price-card .label {{font-size: 0.9rem; letter-spacing: 0.6px; opacity: 0.92; text-transform: uppercase;}}
+    .price-card .value {{font-size: 2.6rem; font-weight: 800; margin-top: 0.25rem; line-height: 1;}}
+    .price-card .sub {{font-size: 0.82rem; opacity: 0.9; margin-top: 0.5rem;}}
 
-    /* empty-state placeholder */
-    .placeholder {
-        border: 2px dashed #b6cfe0; border-radius: 16px; padding: 2.6rem 1.6rem;
-        text-align: center; color: #5a7184; background: #fbfdff;
-    }
-    .placeholder h3 {color: #35566e; margin: 0 0 0.4rem;}
-    .section-title {font-weight: 700; color: #1c3b52; margin: 1.2rem 0 0.4rem; font-size: 1.05rem;}
-    .foot {color: #7a8da0; font-size: 0.8rem; text-align: center; margin-top: 2rem;}
+    /* section titles inherit the theme text colour so they work on light or dark */
+    .section-title {{font-weight: 700; margin: 1.2rem 0 0.4rem; font-size: 1.05rem;}}
+    .foot {{color: #7f8c9a; font-size: 0.8rem; text-align: center; margin-top: 2rem;}}
     </style>
     """,
     unsafe_allow_html=True,
@@ -69,11 +57,6 @@ TOWNS = ['ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH', 'BUKIT P
 # 1 ROOM left out: only 87 were ever resold, so the model cannot price them reliably
 FLAT_TYPES = ['2 ROOM', '3 ROOM', '4 ROOM', '5 ROOM', 'EXECUTIVE', 'MULTI-GENERATION']
 
-FLAT_MODELS = ['2-room', '3Gen', 'Adjoined flat', 'Apartment', 'DBSS', 'Improved',
-               'Improved-Maisonette', 'Maisonette', 'Model A', 'Model A-Maisonette', 'Model A2',
-               'Multi Generation', 'New Generation', 'Premium Apartment', 'Premium Apartment Loft',
-               'Premium Maisonette', 'Simplified', 'Standard', 'Terrace', 'Type S1', 'Type S2']
-
 STOREY_RANGES = ['01 TO 03', '04 TO 06', '07 TO 09', '10 TO 12', '13 TO 15', '16 TO 18',
                  '19 TO 21', '22 TO 24', '25 TO 27', '28 TO 30', '31 TO 33', '34 TO 36',
                  '37 TO 39', '40 TO 42', '43 TO 45', '46 TO 48', '49 TO 51']
@@ -97,30 +80,34 @@ with left:
     st.markdown('<div class="section-title">Enter the flat details</div>', unsafe_allow_html=True)
     town = st.selectbox("Town", TOWNS, index=None, placeholder="Choose a town")
     flat_type = st.selectbox("Flat type", FLAT_TYPES, index=None, placeholder="Choose a flat type")
-    flat_model = st.selectbox("Flat model", FLAT_MODELS, index=None, placeholder="Choose a flat model")
     storey_range = st.selectbox("Storey (which floors)", STOREY_RANGES, index=None,
                                 placeholder="Choose the storey range")
     # floor area starts at the average size for the chosen flat type (90 before one is picked)
     floor_area = st.slider("Floor area (sqm)", 30, 200, TYPICAL_SQM.get(flat_type, 90))
+    st.caption("Floor area auto-sets to the average size for the flat type you pick. "
+               "Drag it if you know your flat's exact size.")
     remaining_lease = st.slider("Remaining lease (years)", 40, 99, 90)
     year = st.slider("Year of sale", 2017, 2026, 2026)
 
 # ---------- Right: estimate + comparisons ----------
 with right:
-    ready = all(v is not None for v in (town, flat_type, flat_model, storey_range))
+    ready = all(v is not None for v in (town, flat_type, storey_range))
 
     if not ready:
-        st.markdown(
-            '<div class="placeholder"><h3>Your estimate will appear here</h3>'
-            '<p>Fill in all the flat details on the left to see the estimated fair price '
-            'and how it compares to real past sales.</p></div>',
-            unsafe_allow_html=True,
-        )
+        st.info("Fill in all the flat details on the left to see the estimated fair price "
+                "and how it compares to real past sales.")
     else:
         try:
             # storey range "10 TO 12" -> middle floor 11, like in training
             low, high = storey_range.split(" TO ")
             storey_mid = (int(low) + int(high)) // 2
+
+            # comparable past sales: same flat type in the same town
+            similar = data[(data["town"] == town) & (data["flat_type"] == flat_type)]
+
+            # flat_model is not asked (buyers rarely know it), so I fill in the most common
+            # model for the chosen town and flat type so the model still gets a realistic value.
+            flat_model = similar["flat_model"].mode().iloc[0] if len(similar) else "Model A"
 
             input_df = pd.DataFrame([{
                 "floor_area_sqm": floor_area,
@@ -142,9 +129,6 @@ with right:
                 f'<div class="sub">Typically within about $29,000 of the real price</div></div>',
                 unsafe_allow_html=True,
             )
-
-            # comparable past sales: same flat type in the same town
-            similar = data[(data["town"] == town) & (data["flat_type"] == flat_type)]
 
             if len(similar) >= 20:
                 q25, med, q75 = similar["resale_price"].quantile([0.25, 0.5, 0.75])
@@ -171,7 +155,7 @@ with right:
                 plot_src = recent if len(recent) >= 30 else similar
                 if len(plot_src) >= 10:
                     fig, ax = plt.subplots(figsize=(6, 3.2))
-                    ax.hist(plot_src["resale_price"], bins=25, color="#0e6ba8", alpha=0.85)
+                    ax.hist(plot_src["resale_price"], bins=25, color=ACCENT, alpha=0.85)
                     ax.axvline(price, color="#e67e22", linestyle="--", linewidth=2.5, label="Your estimate")
                     ax.set_xlabel("Resale price (SGD)")
                     ax.set_ylabel("Number of sales")
@@ -187,7 +171,7 @@ with right:
             with tab2:
                 trend = data[data["town"] == town].groupby("year")["resale_price"].median()
                 fig2, ax2 = plt.subplots(figsize=(6, 3.2))
-                ax2.plot(trend.index, trend.values, marker="o", color="#13a89e", linewidth=2.5)
+                ax2.plot(trend.index, trend.values, marker="o", color=ACCENT, linewidth=2.5)
                 ax2.set_xlabel("Year")
                 ax2.set_ylabel("Median resale price (SGD)")
                 ax2.set_title(f"Median resale price by year in {town}")
