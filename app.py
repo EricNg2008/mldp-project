@@ -130,22 +130,6 @@ with right:
                 unsafe_allow_html=True,
             )
 
-            if len(similar) >= 20:
-                q25, med, q75 = similar["resale_price"].quantile([0.25, 0.5, 0.75])
-                st.markdown('<div class="section-title">Typical price for this flat</div>',
-                            unsafe_allow_html=True)
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Lower end (25%)", f"${q25:,.0f}")
-                m2.metric("Median", f"${med:,.0f}")
-                m3.metric("Upper end (75%)", f"${q75:,.0f}")
-
-                if price < q25:
-                    st.success("Your estimate is below the typical range, so the market usually pays more, a potential deal.")
-                elif price > q75:
-                    st.warning("Your estimate is above the typical range for this flat, so double check the details.")
-                else:
-                    st.info("Your estimate sits within the typical range for this flat.")
-
             # ---------- charts in tabs (no scrolling to switch between them) ----------
             st.markdown('<div class="section-title">How this compares</div>', unsafe_allow_html=True)
             tab1, tab2 = st.tabs(["Vs recent sales", "Price trend"])
